@@ -247,7 +247,7 @@ export const SEASON_1_RANKED = [
     { rank: 230, name: "nanhan", url: "https://x.com/airdrop_nanhan", prize: "ZAMA OG NFT" },
     { rank: 231, name: "pg", url: "https://x.com/pgreyy", prize: "ZAMA OG NFT" },
     { rank: 232, name: "chriswilder.eth", url: "https://x.com/realchriswilder", prize: "ZAMA OG NFT" },
-    { rank: 233, name: "Mula", url: "https://x.com/OxMula", prize: "ZAMA OG NFT" },
+    { rank: 233, name: "Mula", url: "https://x.com/0xMula", prize: "ZAMA OG NFT" },
     { rank: 234, name: "99⚛️🦥🦣 🧙‍♂️,🛠️", url: "https://x.com/99holders", prize: "ZAMA OG NFT" },
     { rank: 235, name: "Duta Crypto", url: "https://x.com/duta_crypto", prize: "ZAMA OG NFT" },
     { rank: 236, name: "Dan", url: "https://x.com/danbuildss", prize: "ZAMA OG NFT" },
