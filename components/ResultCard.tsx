@@ -27,7 +27,7 @@ const ResultCard: React.FC<ResultCardProps> = ({
     const mindshareValue = data ? parseFloat(data.mindshare.toFixed(2)) : 0;
     
     return (
-        <div className={`glass-panel rounded-xl p-6 flex flex-col justify-between h-full min-h-[180px] transition-all duration-500 hover:translate-y-[-2px] ${status === 'found' ? 'border-neutral-700' : 'border-neutral-800'}`}>
+        <div className={`glass-panel rounded-xl p-6 flex flex-col justify-between h-full min-h-[180px] transition-all duration-500 hover:translate-y-[-2px] ${status === 'found' ? 'border-neutral-600' : 'border-neutral-800'}`}>
             
             {/* Header */}
             <div className="flex justify-between items-start mb-4">
@@ -36,7 +36,7 @@ const ResultCard: React.FC<ResultCardProps> = ({
                 </span>
                 
                 {status === 'found' && (
-                    <CheckCircle2 className="text-green-500/50" size={16} />
+                    <CheckCircle2 className="text-green-500" size={16} />
                 )}
             </div>
 
@@ -44,7 +44,7 @@ const ResultCard: React.FC<ResultCardProps> = ({
             <div className="flex-grow flex flex-col justify-center">
                 
                 {status === 'idle' && (
-                    <div className="text-center text-neutral-600 text-sm">
+                    <div className="text-center text-neutral-400 text-sm">
                         Waiting to scan...
                     </div>
                 )}
@@ -58,14 +58,14 @@ const ResultCard: React.FC<ResultCardProps> = ({
                                 style={{ width: `${progress}%`, transition: 'width 0.3s ease-in-out' }}
                             ></div>
                         </div>
-                        <span className="text-xs text-neutral-500 font-mono">{progress}% Scanned</span>
+                        <span className="text-xs text-neutral-400 font-mono">{progress}% Scanned</span>
                     </div>
                 )}
 
                 {status === 'not_found' && (
-                    <div className="text-center text-neutral-500 flex flex-col items-center gap-2">
+                    <div className="text-center text-neutral-400 flex flex-col items-center gap-2">
                         <AlertCircle size={20} className="opacity-50" />
-                        <span className="text-sm">Not Ranked</span>
+                        <span className="text-sm font-medium">Not Ranked</span>
                     </div>
                 )}
 
@@ -74,22 +74,22 @@ const ResultCard: React.FC<ResultCardProps> = ({
                         <div className="text-4xl font-bold text-white font-display mb-1">
                             #{data.rank}
                         </div>
-                        <div className="text-xs text-neutral-500 uppercase tracking-wider mb-4">
+                        <div className="text-xs text-neutral-400 uppercase tracking-wider mb-4">
                             Rank
                         </div>
                         
-                        <div className="flex items-center justify-center gap-2 bg-neutral-900/50 py-2 rounded-lg border border-neutral-800">
+                        <div className="flex items-center justify-center gap-2 bg-neutral-900/80 py-2 rounded-lg border border-neutral-700">
                             <TrendingUp size={14} className={colorClass} />
                             <span className="text-lg font-mono font-bold text-neutral-200">
                                 {mindshareValue}%
                             </span>
-                            <span className="text-[10px] text-neutral-600 self-end mb-1">Mindshare</span>
+                            <span className="text-[10px] text-neutral-400 self-end mb-1">Mindshare</span>
                         </div>
                     </div>
                 )}
                 
                 {status === 'error' && (
-                    <div className="text-center text-red-500/70 text-sm">
+                    <div className="text-center text-red-400 text-sm">
                         Connection Error
                     </div>
                 )}

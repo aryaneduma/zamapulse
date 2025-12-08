@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { SearchResult, ZamaUser, HistoryItem, Timeframe } from '../types';
 import { TIMEFRAMES, LOCAL_STORAGE_KEY } from '../constants';
@@ -5,7 +6,20 @@ import { searchUserInTimeframe } from '../services/zamaService';
 import SearchBar from './SearchBar';
 import ResultCard from './ResultCard';
 import SearchHistory from './SearchHistory';
-import { ExternalLink, Zap } from 'lucide-react';
+import { ExternalLink, Zap, Trophy, Medal, Crown, Star } from 'lucide-react';
+
+// Import Static Data for Historical Checks
+import { SEASON_1_RANKED, SEASON_1_CHOICE_AWARDS } from '../data/season1';
+import { SEASON_2_RANKED, SEASON_2_CHOICE_AWARDS } from '../data/season2';
+import { SEASON_3_RANKED, SEASON_3_CHOICE_AWARDS } from '../data/season3';
+import { SEASON_4_RANKED, SEASON_4_CHOICE_AWARDS } from '../data/season4';
+
+interface Achievement {
+    season: string;
+    type: 'Ranked' | 'Creator Choice';
+    rank: number | string;
+    prize: string;
+}
 
 const RankChecker: React.FC = () => {
     // Search State
@@ -29,6 +43,9 @@ const RankChecker: React.FC = () => {
 
     // User Metadata (Avatar/Name) - taken from the first successful result
     const [userMeta, setUserMeta] = useState<Partial<ZamaUser> | null>(null);
+    
+    // Historical Achievements
+    const [achievements, setAchievements] = useState<Achievement[]>([]);
 
     // History State
     const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -53,6 +70,71 @@ const RankChecker: React.FC = () => {
         }));
     };
 
+    const checkStaticSeasons = (username: string) => {
+        const cleanUser = username.toLowerCase().replace('@', '').trim();
+        const found: Achievement[] = [];
+        let foundUserData: Partial<ZamaUser> | null = null;
+
+        const seasons = [
+            { id: 's1', label: 'Season 1', ranked: SEASON_1_RANKED, choice: SEASON_1_CHOICE_AWARDS },
+            { id: 's2', label: 'Season 2', ranked: SEASON_2_RANKED, choice: SEASON_2_CHOICE_AWARDS },
+            { id: 's3', label: 'Season 3', ranked: SEASON_3_RANKED, choice: SEASON_3_CHOICE_AWARDS },
+            { id: 's4', label: 'Season 4', ranked: SEASON_4_RANKED, choice: SEASON_4_CHOICE_AWARDS },
+        ];
+
+        seasons.forEach(s => {
+            // Check Ranked List
+            // Note: Data structure varies slightly, handling robustly
+            const rankedMatch = s.ranked.find((u: any) => {
+                // Extract handle from URL, handling possible query params or trailing slashes
+                const urlParts = u.url ? u.url.split('x.com/') : [];
+                const handle = urlParts.length > 1 ? urlParts[1].split(/[/?]/)[0] : '';
+                return handle.toLowerCase() === cleanUser;
+            });
+
+            if (rankedMatch) {
+                found.push({ 
+                    season: s.label, 
+                    type: 'Ranked', 
+                    rank: rankedMatch.rank, 
+                    prize: rankedMatch.prize 
+                });
+                // Fallback user data if not found in live stats
+                if (!foundUserData) {
+                    foundUserData = { 
+                        username: cleanUser, 
+                        displayName: rankedMatch.name, 
+                        profilePicture: `https://unavatar.io/twitter/${cleanUser}` 
+                    };
+                }
+            }
+
+            // Check Choice Awards
+            const choiceMatch = s.choice.find((u: any) => {
+                const handle = u.handle || '';
+                return handle.toLowerCase() === cleanUser;
+            });
+
+            if (choiceMatch) {
+                found.push({ 
+                    season: s.label, 
+                    type: 'Creator Choice', 
+                    rank: 'Winner', 
+                    prize: choiceMatch.prize 
+                });
+                if (!foundUserData) {
+                    foundUserData = { 
+                        username: cleanUser, 
+                        displayName: choiceMatch.name, 
+                        profilePicture: `https://unavatar.io/twitter/${cleanUser}` 
+                    };
+                }
+            }
+        });
+
+        return { achievements: found, userData: foundUserData };
+    };
+
     const handleSearch = async (username: string) => {
         if (!username) return;
         
@@ -60,6 +142,7 @@ const RankChecker: React.FC = () => {
         setSearchQuery(username);
         setIsSearching(true);
         setUserMeta(null);
+        setAchievements([]);
         setResults({
             '24h': { status: 'loading', data: null },
             '7d': { status: 'loading', data: null },
@@ -89,6 +172,14 @@ const RankChecker: React.FC = () => {
 
         // Run all searches in parallel
         await Promise.all(TIMEFRAMES.map(tf => runSearch(tf.key as Timeframe)));
+
+        // After live search, check history
+        const historyCheck = checkStaticSeasons(username);
+        if (historyCheck.achievements.length > 0) {
+            setAchievements(historyCheck.achievements);
+            // If user wasn't found in live stats, populate header with historical data
+            setUserMeta(prev => prev || historyCheck.userData);
+        }
 
         setIsSearching(false);
     };
@@ -124,7 +215,7 @@ const RankChecker: React.FC = () => {
                 <h1 className="text-5xl md:text-7xl font-bold font-display tracking-tighter text-white text-glow">
                     ZAMA <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600">PULSE</span>
                 </h1>
-                <p className="text-neutral-400 text-lg max-w-md mx-auto leading-relaxed">
+                <p className="text-neutral-300 text-lg max-w-md mx-auto leading-relaxed">
                     Real-time rank analytics for the Zama leaderboard. 
                     Track Mindshare across timeframes.
                 </p>
@@ -150,17 +241,23 @@ const RankChecker: React.FC = () => {
                                 href={`https://x.com/${userMeta.username}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1 text-neutral-400 hover:text-yellow-400 transition-colors mt-1"
+                                className="inline-flex items-center gap-1 text-neutral-300 hover:text-yellow-400 transition-colors mt-1"
                             >
                                 @{userMeta.username}
                                 <ExternalLink size={14} />
                             </a>
                         </div>
                         <div className="hidden sm:block text-right">
-                            <div className="text-xs text-neutral-500 uppercase tracking-widest font-bold mb-1">Status</div>
-                            <div className="text-green-400 font-mono text-sm bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20 inline-block">
-                                Active
-                            </div>
+                            <div className="text-xs text-neutral-400 uppercase tracking-widest font-bold mb-1">Status</div>
+                            {results['24h']?.status === 'found' || results['7d']?.status === 'found' || results['30d']?.status === 'found' ? (
+                                <div className="text-green-400 font-mono text-sm bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20 inline-block">
+                                    Active
+                                </div>
+                            ) : (
+                                <div className="text-neutral-400 font-mono text-sm bg-neutral-500/10 px-3 py-1 rounded-full border border-neutral-500/20 inline-block">
+                                    Inactive
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -186,9 +283,42 @@ const RankChecker: React.FC = () => {
                 })}
             </div>
 
+            {/* Achievements Section */}
+            {achievements.length > 0 && (
+                <div className="w-full mt-8 animate-in slide-in-from-bottom-6 duration-700 delay-100">
+                    <div className="flex items-center gap-3 mb-4 px-2">
+                        <Trophy className="text-yellow-500" size={20} />
+                        <h3 className="text-lg font-bold text-white uppercase tracking-wider">Hall of Fame</h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {achievements.map((item, idx) => (
+                            <div key={idx} className="glass-panel p-4 rounded-xl border border-yellow-500/20 bg-gradient-to-br from-yellow-900/10 to-transparent flex items-center justify-between group hover:border-yellow-500/40 transition-all">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-yellow-500/10 rounded-lg text-yellow-400 border border-yellow-500/20 group-hover:scale-110 transition-transform">
+                                        {item.type === 'Ranked' && typeof item.rank === 'number' && item.rank <= 3 ? <Crown size={20} /> : 
+                                         item.type === 'Creator Choice' ? <Star size={20} /> :
+                                         <Medal size={20} />}
+                                    </div>
+                                    <div>
+                                        <div className="text-sm font-bold text-yellow-100/90">{item.season}</div>
+                                        <div className="text-xs text-yellow-500/80 font-medium uppercase tracking-wide">{item.type === 'Creator Choice' ? 'Choice Award' : `Rank #${item.rank}`}</div>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-sm font-mono font-bold text-white">{item.prize.split('+')[0].trim()}</div>
+                                    {item.prize.includes('NFT') && (
+                                        <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/30">NFT</span>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Empty State / Prompt */}
             {!userMeta && !isSearching && history.length === 0 && (
-                <div className="mt-12 text-center text-neutral-600">
+                <div className="mt-12 text-center text-neutral-400">
                     <p>Enter a username above to start scanning.</p>
                 </div>
             )}

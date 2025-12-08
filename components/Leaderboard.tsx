@@ -164,7 +164,7 @@ const Leaderboard: React.FC = () => {
         if (rank === 1) return <Medal className="text-yellow-400 fill-yellow-400/20" size={24} />;
         if (rank === 2) return <Medal className="text-gray-300 fill-gray-300/20" size={24} />;
         if (rank === 3) return <Medal className="text-amber-700 fill-amber-700/20" size={24} />;
-        return <span className="font-mono text-neutral-500 font-bold">#{rank}</span>;
+        return <span className="font-mono text-neutral-400 font-bold">#{rank}</span>;
     };
 
     // --- STATIC SEASON RENDER (S1 & S2 & S3 & S4) ---
@@ -173,14 +173,14 @@ const Leaderboard: React.FC = () => {
             
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-neutral-900/40 border border-yellow-500/20 rounded-2xl p-6 flex items-center justify-between relative overflow-hidden">
+                <div className="bg-neutral-900/60 border border-yellow-500/20 rounded-2xl p-6 flex items-center justify-between relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-5"><Trophy size={100} /></div>
                     <div>
                         <div className="text-sm text-neutral-400 uppercase tracking-wider mb-1">Total Rewards</div>
                         <div className="text-3xl font-bold text-white font-display">{stats.totalRewards}</div>
                     </div>
                 </div>
-                <div className="bg-neutral-900/40 border border-blue-500/20 rounded-2xl p-6 flex items-center justify-between relative overflow-hidden">
+                <div className="bg-neutral-900/60 border border-blue-500/20 rounded-2xl p-6 flex items-center justify-between relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-5"><Zap size={100} /></div>
                     <div>
                         <div className="text-sm text-neutral-400 uppercase tracking-wider mb-1">Creators Awarded</div>
@@ -189,7 +189,7 @@ const Leaderboard: React.FC = () => {
                 </div>
             </div>
             
-            <p className="text-center text-neutral-400 max-w-2xl mx-auto italic border-l-2 border-yellow-500/50 pl-4 py-2 bg-yellow-500/5 rounded-r-lg">
+            <p className="text-center text-neutral-300 max-w-2xl mx-auto italic border-l-2 border-yellow-500/50 pl-4 py-2 bg-yellow-500/5 rounded-r-lg">
                 "{stats.description}"
             </p>
 
@@ -209,16 +209,16 @@ const Leaderboard: React.FC = () => {
                                         <div className="bg-yellow-500/20 text-yellow-400 text-xs font-bold px-2 py-1 rounded border border-yellow-500/30">
                                             WINNER
                                         </div>
-                                        <ExternalLink size={14} className="text-neutral-500 group-hover:text-white" />
+                                        <ExternalLink size={14} className="text-neutral-400 group-hover:text-white" />
                                     </div>
                                     <div className="flex items-center gap-3 mb-3">
                                         <img src={`https://unavatar.io/${winner.platform && winner.platform.toLowerCase() === 'x' ? 'twitter' : ''}/${winner.handle}`} className="w-12 h-12 rounded-full border border-neutral-700 bg-neutral-800" alt={winner.name} />
                                         <div>
                                             <div className="font-bold text-white">{winner.name}</div>
-                                            <div className="text-xs text-neutral-500">{winner.platform}</div>
+                                            <div className="text-xs text-neutral-400">{winner.platform}</div>
                                         </div>
                                     </div>
-                                    <div className="text-sm font-mono text-neutral-300 border-t border-white/5 pt-3">
+                                    <div className="text-sm font-mono text-neutral-200 border-t border-white/10 pt-3">
                                         {winner.prize}
                                     </div>
                                 </div>
@@ -239,7 +239,7 @@ const Leaderboard: React.FC = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="border-b border-neutral-800 bg-black/40 text-xs uppercase text-neutral-500 tracking-wider font-semibold">
+                                <tr className="border-b border-neutral-800 bg-black/40 text-xs uppercase text-neutral-400 tracking-wider font-semibold">
                                     <th className="p-4 w-24 text-center">Rank</th>
                                     <th className="p-4">Creator</th>
                                     <th className="p-4 text-right">Prize</th>
@@ -264,7 +264,7 @@ const Leaderboard: React.FC = () => {
                                                     />
                                                     <div>
                                                         <div className="font-bold text-neutral-200">{user.name}</div>
-                                                        <a href={user.url} target="_blank" className="text-xs text-neutral-500 hover:text-blue-400 flex items-center gap-1">
+                                                        <a href={user.url} target="_blank" className="text-xs text-neutral-400 hover:text-blue-400 flex items-center gap-1 transition-colors">
                                                             @{handle} <ExternalLink size={10} />
                                                         </a>
                                                     </div>
@@ -296,7 +296,7 @@ const Leaderboard: React.FC = () => {
                     <span className="text-yellow-500 font-bold uppercase tracking-widest text-xs">Top 1000</span>
                 </div>
                 <h2 className="text-4xl md:text-6xl font-bold font-display text-white mt-2 text-glow">Creator Leaderboard</h2>
-                <p className="text-neutral-400 mt-3 text-lg font-light">Honoring the top contributors of each season</p>
+                <p className="text-neutral-300 mt-3 text-lg font-light">Honoring the top contributors of each season</p>
             </div>
 
             {/* Season Selector */}
@@ -311,7 +311,7 @@ const Leaderboard: React.FC = () => {
                                 className={`relative px-5 py-3 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
                                     isActive
                                         ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)] scale-105'
-                                        : 'bg-neutral-900/50 text-neutral-500 border border-neutral-800 hover:border-neutral-600 hover:text-neutral-300'
+                                        : 'bg-neutral-900/50 text-neutral-400 border border-neutral-800 hover:border-neutral-600 hover:text-white'
                                 }`}
                             >
                                 {season.label}
@@ -332,7 +332,7 @@ const Leaderboard: React.FC = () => {
                 <form onSubmit={handleVerify} className="relative group">
                     <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-blue-500/10 rounded-2xl blur-lg transition-opacity opacity-50 group-hover:opacity-100"></div>
                     <div className="relative flex items-center bg-neutral-900/90 border border-neutral-800 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl focus-within:border-yellow-500/50 focus-within:ring-1 focus-within:ring-yellow-500/50 transition-all">
-                        <div className="pl-4 text-neutral-500">
+                        <div className="pl-4 text-neutral-400">
                             <Search size={20} />
                         </div>
                         <input 
@@ -340,7 +340,7 @@ const Leaderboard: React.FC = () => {
                             value={verifyQuery}
                             onChange={(e) => setVerifyQuery(e.target.value)}
                             placeholder={`Verify rank in ${SEASONS.find(s => s.id === selectedSeason)?.label}...`}
-                            className="w-full bg-transparent border-none text-white px-4 py-4 outline-none placeholder:text-neutral-600 font-display"
+                            className="w-full bg-transparent border-none text-white px-4 py-4 outline-none placeholder:text-neutral-500 font-display"
                         />
                         <div className="pr-2">
                             <button 
@@ -376,7 +376,7 @@ const Leaderboard: React.FC = () => {
                                     </div>
                                     <div className="flex-1">
                                         <div className="text-white font-bold text-xl font-display tracking-tight">{verifyResult.data.displayName || verifyResult.data.name}</div>
-                                        <div className="text-neutral-500 text-sm font-mono">@{verifyResult.data.username || verifyResult.data.handle}</div>
+                                        <div className="text-neutral-400 text-sm font-mono">@{verifyResult.data.username || verifyResult.data.handle}</div>
                                     </div>
                                     <div className="text-right bg-yellow-500/10 px-4 py-2 rounded-xl border border-yellow-500/20 backdrop-blur-md">
                                         {verifyResult.data.rank ? (
@@ -399,7 +399,7 @@ const Leaderboard: React.FC = () => {
                                 )}
                             </div>
                         ) : (
-                            <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 flex items-center gap-3 text-red-200/80">
+                            <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 flex items-center gap-3 text-red-200">
                                 <XCircle className="text-red-500" size={20} />
                                 <div className="text-sm">
                                     <span className="font-bold block text-red-400">Not Found</span>
@@ -428,7 +428,7 @@ const Leaderboard: React.FC = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="border-b border-neutral-800 bg-black/40 text-xs uppercase text-neutral-500 tracking-wider font-semibold">
+                                <tr className="border-b border-neutral-800 bg-black/40 text-xs uppercase text-neutral-400 tracking-wider font-semibold">
                                     <th className="p-5 w-24 text-center">Rank</th>
                                     <th className="p-5">Creator</th>
                                     <th className="p-5 text-right">Mindshare</th>
@@ -456,7 +456,7 @@ const Leaderboard: React.FC = () => {
                                                         href={`https://x.com/${user.username}`}
                                                         target="_blank"
                                                         rel="noreferrer" 
-                                                        className="text-xs text-neutral-500 flex items-center gap-1 hover:text-yellow-400 hover:underline mt-0.5"
+                                                        className="text-xs text-neutral-400 flex items-center gap-1 hover:text-yellow-400 hover:underline mt-0.5"
                                                     >
                                                         @{user.username}
                                                     </a>
@@ -473,7 +473,7 @@ const Leaderboard: React.FC = () => {
                                 
                                 {users.length === 0 && !loading && (
                                     <tr>
-                                        <td colSpan={3} className="p-20 text-center text-neutral-500">
+                                        <td colSpan={3} className="p-20 text-center text-neutral-400">
                                             <div className="flex flex-col items-center gap-2">
                                                 <Search className="opacity-20" size={40} />
                                                 <span>No data available for this season yet.</span>
@@ -498,7 +498,7 @@ const Leaderboard: React.FC = () => {
                         </div>
                     )}
                     {(!hasMore || page > 10) && users.length > 0 && (
-                        <div className="p-6 text-center text-xs text-neutral-600 border-t border-neutral-800 uppercase tracking-widest font-semibold">
+                        <div className="p-6 text-center text-xs text-neutral-500 border-t border-neutral-800 uppercase tracking-widest font-semibold">
                             — End of Top 1000 —
                         </div>
                     )}

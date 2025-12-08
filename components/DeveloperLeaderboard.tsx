@@ -48,7 +48,7 @@ const DeveloperLeaderboard: React.FC = () => {
                 {/* Left: Avatar & Rank */}
                 <div className="flex-shrink-0 flex lg:flex-col items-center gap-4 lg:w-24 lg:border-r border-neutral-800 lg:pr-6">
                     {/* Rank is only relevant if not categorized or if we want to show global rank, but for categories, maybe just an index is fine */}
-                    <div className="text-4xl font-bold font-display text-neutral-700 group-hover:text-green-500/50 transition-colors">
+                    <div className="text-4xl font-bold font-display text-neutral-600 group-hover:text-green-500/50 transition-colors">
                         #{index + 1}
                     </div>
                     <img 
@@ -71,13 +71,13 @@ const DeveloperLeaderboard: React.FC = () => {
                             href={`https://github.com/${project.username}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-xs font-mono text-neutral-500 bg-neutral-900 px-2 py-1 rounded border border-neutral-800 hover:border-neutral-600 hover:text-white transition-colors self-start sm:self-center"
+                            className="text-xs font-mono text-neutral-400 bg-neutral-900 px-2 py-1 rounded border border-neutral-800 hover:border-neutral-600 hover:text-white transition-colors self-start sm:self-center"
                         >
                             @{project.username}
                         </a>
                     </div>
                     
-                    <p className="text-neutral-400 leading-relaxed mb-4 text-sm max-w-3xl">
+                    <p className="text-neutral-300 leading-relaxed mb-4 text-sm max-w-3xl">
                         {project.description}
                     </p>
 
@@ -115,7 +115,7 @@ const DeveloperLeaderboard: React.FC = () => {
 
                 {/* Right: Prize */}
                 <div className="flex flex-row lg:flex-col items-center justify-between lg:justify-center lg:w-32 lg:pl-6 lg:border-l border-neutral-800 mt-4 lg:mt-0">
-                    <div className="text-xs text-neutral-500 uppercase tracking-wider font-bold mb-1">Prize</div>
+                    <div className="text-xs text-neutral-400 uppercase tracking-wider font-bold mb-1">Prize</div>
                     <div className="text-xl font-bold font-mono text-green-400 bg-green-500/10 px-3 py-1 rounded-lg border border-green-500/20 whitespace-nowrap">
                         {project.prize}
                     </div>
@@ -138,7 +138,7 @@ const DeveloperLeaderboard: React.FC = () => {
                     <span className="text-green-500 font-bold uppercase tracking-widest text-xs">Devs & Builders</span>
                 </div>
                 <h2 className="text-4xl md:text-6xl font-bold font-display text-white mt-2 text-glow">Developer Leaderboard</h2>
-                <p className="text-neutral-400 mt-3 text-lg font-light">Tracking contributions to the Zama ecosystem</p>
+                <p className="text-neutral-300 mt-3 text-lg font-light">Tracking contributions to the Zama ecosystem</p>
             </div>
 
             {/* Season Selector */}
@@ -153,7 +153,7 @@ const DeveloperLeaderboard: React.FC = () => {
                                 className={`relative px-5 py-3 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 border ${
                                     isActive
                                         ? 'bg-green-500 text-black border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)] scale-105'
-                                        : 'bg-neutral-900/50 text-neutral-500 border-neutral-800 hover:border-green-500/30 hover:text-green-400'
+                                        : 'bg-neutral-900/50 text-neutral-400 border-neutral-800 hover:border-green-500/30 hover:text-green-400'
                                 }`}
                             >
                                 {season.label}
@@ -170,7 +170,7 @@ const DeveloperLeaderboard: React.FC = () => {
                     <form onSubmit={handleSearch} className="relative group">
                         <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-2xl blur-lg transition-opacity opacity-50 group-hover:opacity-100"></div>
                         <div className="relative flex items-center bg-neutral-900/90 border border-neutral-800 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl focus-within:border-green-500/50 focus-within:ring-1 focus-within:ring-green-500/50 transition-all">
-                            <div className="pl-4 text-neutral-500">
+                            <div className="pl-4 text-neutral-400">
                                 <Search size={20} />
                             </div>
                             <input 
@@ -178,7 +178,7 @@ const DeveloperLeaderboard: React.FC = () => {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search projects or builders..."
-                                className="w-full bg-transparent border-none text-white px-4 py-4 outline-none placeholder:text-neutral-600 font-display"
+                                className="w-full bg-transparent border-none text-white px-4 py-4 outline-none placeholder:text-neutral-500 font-display"
                             />
                         </div>
                     </form>
