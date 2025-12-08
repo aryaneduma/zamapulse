@@ -49,7 +49,7 @@ export const SEASON_2_RANKED = [
     { rank: 32, name: "Scribbler", url: "https://x.com/Defi_Scribbler", prize: "$509 + OG NFT" },
     { rank: 33, name: "人在币圈（Lovecity） (小爱)./", url: "https://x.com/lovecity0088", prize: "$503 + OG NFT" },
     { rank: 34, name: "Charles", url: "https://x.com/charles48011843", prize: "$487 + OG NFT" },
-    { rank: 35, name: "安排 Morph", url: "https://x.com/iugaisamx43415", prize: "$483 + OG NFT" },
+    { rank: 35, name: "安排 Morph", url: "https://x.com/iuqaisamx43415", prize: "$483 + OG NFT" },
     { rank: 36, name: "Web3Andy", url: "https://x.com/Web3Andy01", prize: "$478 + OG NFT" },
     { rank: 37, name: "北岛", url: "https://x.com/BeiDao_98", prize: "$465 + OG NFT" },
     { rank: 38, name: "0xChemist", url: "https://x.com/0xchemistry,", prize: "$459 + OG NFT" },
