@@ -63,25 +63,25 @@ const App: React.FC = () => {
             </main>
 
             {/* Footer */}
-            <footer className="mt-24 py-8 text-neutral-600 font-mono text-center border-t border-white/5 w-full max-w-4xl relative z-10">
-                <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-                    <span className="text-sm">Zama Pulse v2.2</span>
-                    <span className="text-sm opacity-50">Unofficial Analytics Tool</span>
+            <footer className="mt-24 py-10 text-neutral-400 font-mono text-center border-t border-white/10 w-full max-w-4xl relative z-10 bg-black/20 backdrop-blur-sm rounded-t-3xl">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 px-8">
+                    <span className="text-sm font-bold text-neutral-300">Zama Pulse v2.2</span>
+                    <span className="text-sm opacity-60">Unofficial Analytics Tool</span>
                 </div>
                 
-                <div className="flex flex-col items-center gap-2 text-xs opacity-80 hover:opacity-100 transition-opacity duration-300">
-                    <div className="flex items-center gap-1.5">
-                        <span>Made by</span>
+                <div className="flex flex-col items-center gap-3 text-sm">
+                    <div className="flex items-center gap-2">
+                        <span className="opacity-80">Made by</span>
                         <a 
                             href="https://x.com/idkerrors" 
                             target="_blank" 
                             rel="noreferrer" 
-                            className="text-yellow-500 hover:text-yellow-400 font-bold transition-colors flex items-center gap-1"
+                            className="text-yellow-400 hover:text-yellow-300 font-bold transition-colors flex items-center gap-1 bg-yellow-500/10 px-3 py-1 rounded-full border border-yellow-500/20 hover:bg-yellow-500/20"
                         >
                             @idkerrors
                         </a>
                     </div>
-                    <div className="text-neutral-500">
+                    <div className="text-neutral-500 text-xs mt-2 hover:text-neutral-300 transition-colors">
                         For any issue/bug or request contact me on X
                     </div>
                 </div>
