@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { ZamaUser } from '../types';
 import { getLeaderboard, searchUserInTimeframe } from '../services/zamaService';
@@ -12,8 +10,11 @@ import { SEASON_4_RANKED, SEASON_4_CHOICE_AWARDS, SEASON_4_STATS } from '../data
 import { Trophy, Search, Loader2, Medal, Zap, CheckCircle2, XCircle, Star, Crown, ExternalLink } from 'lucide-react';
 
 const Leaderboard: React.FC = () => {
-    // Default to Season 5 (Active)
-    const [selectedSeason, setSelectedSeason] = useState<string>('season5');
+    // Default to Active Season found in constants, or fallback to the last one
+    const [selectedSeason, setSelectedSeason] = useState<string>(() => {
+        const activeSeason = SEASONS.find(s => s.active);
+        return activeSeason ? activeSeason.id : SEASONS[SEASONS.length - 1].id;
+    });
     
     const [users, setUsers] = useState<ZamaUser[]>([]);
     const [page, setPage] = useState(1);
