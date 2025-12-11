@@ -1,15 +1,5 @@
 
-
-export interface DevProject {
-    username: string;
-    projectName: string;
-    repoUrl: string;
-    description: string;
-    prize: string;
-    demoUrl?: string;
-    videoUrl?: string;
-    category?: string;
-}
+import { DevProject } from '../types';
 
 export const JULY_2025_PROJECTS: DevProject[] = [
     {

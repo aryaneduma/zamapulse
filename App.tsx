@@ -1,9 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import RankChecker from './components/RankChecker';
-import Leaderboard from './components/Leaderboard';
-import DeveloperLeaderboard from './components/DeveloperLeaderboard';
-import { BarChart2, Trophy, Code2, ExternalLink, Twitter } from 'lucide-react';
+import { BarChart2, Trophy, Code2, ExternalLink, Twitter, Loader2 } from 'lucide-react';
+
+// Lazy load heavy components to improve initial load time (LCP)
+const Leaderboard = lazy(() => import('./components/Leaderboard'));
+const DeveloperLeaderboard = lazy(() => import('./components/DeveloperLeaderboard'));
 
 type View = 'checker' | 'leaderboard' | 'developer';
 
@@ -13,7 +15,7 @@ const App: React.FC = () => {
     return (
         <div className="min-h-screen relative flex flex-col items-center p-4 sm:p-6 lg:p-12 font-sans selection:bg-yellow-500/30">
             
-            {/* Ambient Background Effects */}
+            {/* Ambient Background Effects - Optimized with will-change if needed, but CSS is generally fine here */}
             <div className="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-yellow-600/5 rounded-full blur-[120px] pointer-events-none mix-blend-screen" />
             <div className="fixed bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-blue-600/5 rounded-full blur-[120px] pointer-events-none mix-blend-screen" />
             <div className="fixed inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none" />
@@ -57,9 +59,15 @@ const App: React.FC = () => {
 
             {/* Content Container */}
             <main className="w-full z-10 flex flex-col items-center min-h-[600px]">
-                {currentView === 'checker' && <RankChecker />}
-                {currentView === 'leaderboard' && <Leaderboard />}
-                {currentView === 'developer' && <DeveloperLeaderboard />}
+                <Suspense fallback={
+                    <div className="w-full h-[400px] flex items-center justify-center">
+                        <Loader2 className="animate-spin text-neutral-500" size={40} />
+                    </div>
+                }>
+                    {currentView === 'checker' && <RankChecker />}
+                    {currentView === 'leaderboard' && <Leaderboard />}
+                    {currentView === 'developer' && <DeveloperLeaderboard />}
+                </Suspense>
             </main>
 
             {/* Footer */}

@@ -1,3 +1,4 @@
+
 import { API_BASE_URL, MAX_SEARCH_PAGES } from '../constants';
 import { ApiResponse, ZamaUser } from '../types';
 
@@ -30,9 +31,15 @@ export const searchUserInTimeframe = async (
                 continue; 
             }
 
-            const json: ApiResponse = await response.json();
+            let json: ApiResponse;
+            try {
+                json = await response.json();
+            } catch (e) {
+                console.warn(`Invalid JSON response for ${timeframe} on page ${page}`);
+                continue;
+            }
 
-            if (json.success && Array.isArray(json.data)) {
+            if (json && json.success && Array.isArray(json.data)) {
                 const user = json.data.find((u: ZamaUser) => 
                     u.username.toLowerCase() === cleanUser || 
                     u.displayName.toLowerCase().includes(cleanUser)
@@ -64,8 +71,15 @@ export const getLeaderboard = async (timeframe: string, page: number): Promise<Z
         const response = await fetch(`${API_BASE_URL}?timeframe=${timeframe}&sortBy=mindshare&page=${page}`);
         if (!response.ok) return [];
         
-        const json: ApiResponse = await response.json();
-        return json.success && Array.isArray(json.data) ? json.data : [];
+        let json: ApiResponse;
+        try {
+            json = await response.json();
+        } catch (e) {
+            console.error("Failed to parse leaderboard JSON", e);
+            return [];
+        }
+
+        return json && json.success && Array.isArray(json.data) ? json.data : [];
     } catch (error) {
         console.error("Failed to fetch leaderboard page", error);
         return [];

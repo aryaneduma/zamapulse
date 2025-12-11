@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
-import { Terminal, Search, Code2, Hammer, Cpu, GitCommit, Shield, Github, ExternalLink, Play, CheckCircle2, Layers } from 'lucide-react';
-import { JULY_2025_PROJECTS, AUGUST_2025_PROJECTS, SEPTEMBER_2025_PROJECTS, OCTOBER_2025_PROJECTS, DevProject } from '../data/developerSeasons.ts';
+import React, { useState, useEffect } from 'react';
+import { Terminal, Search, Code2, Github, ExternalLink, Play, CheckCircle2, Layers, Loader2 } from 'lucide-react';
+import { DevProject } from '../types';
 
 const DEV_SEASONS = [
     { id: 'july_25', label: 'July 2025', status: 'completed' },
@@ -15,20 +15,45 @@ const DeveloperLeaderboard: React.FC = () => {
     // Default to the most recent season (the last one in the list)
     const [selectedSeason, setSelectedSeason] = useState<string>(DEV_SEASONS[DEV_SEASONS.length - 1].id);
     const [searchQuery, setSearchQuery] = useState('');
+    const [projects, setProjects] = useState<DevProject[]>([]);
+    const [loading, setLoading] = useState(false);
 
-    // Determine data source based on season
-    let projects: DevProject[] = [];
-    if (selectedSeason === 'july_25') {
-        projects = JULY_2025_PROJECTS;
-    } else if (selectedSeason === 'aug_25') {
-        projects = AUGUST_2025_PROJECTS;
-    } else if (selectedSeason === 'sep_25') {
-        projects = SEPTEMBER_2025_PROJECTS;
-    } else if (selectedSeason === 'oct_25') {
-        projects = OCTOBER_2025_PROJECTS;
-    }
+    useEffect(() => {
+        let isMounted = true;
+        const loadData = async () => {
+            setLoading(true);
+            setProjects([]); // Clear previous state to avoid flash
+            try {
+                // Dynamically import data to avoid bloating bundle size
+                const module = await import('../data/developerSeasons');
+                
+                if (!isMounted) return;
 
-    const isUpcoming = projects.length === 0;
+                if (selectedSeason === 'july_25') {
+                    setProjects(module.JULY_2025_PROJECTS);
+                } else if (selectedSeason === 'aug_25') {
+                    setProjects(module.AUGUST_2025_PROJECTS);
+                } else if (selectedSeason === 'sep_25') {
+                    setProjects(module.SEPTEMBER_2025_PROJECTS);
+                } else if (selectedSeason === 'oct_25') {
+                    setProjects(module.OCTOBER_2025_PROJECTS);
+                } else {
+                    setProjects([]);
+                }
+            } catch (e) {
+                console.error("Failed to load developer data", e);
+                if (isMounted) setProjects([]);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+
+        loadData();
+
+        return () => { isMounted = false; };
+    }, [selectedSeason]);
+
+    const isUpcoming = !loading && projects.length === 0;
 
     const filteredProjects = projects.filter(p => 
         p.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -165,7 +190,7 @@ const DeveloperLeaderboard: React.FC = () => {
             </div>
 
             {/* Search Bar */}
-            {!isUpcoming && (
+            {!isUpcoming && !loading && (
                 <div className="w-full max-w-lg mb-10 relative z-20">
                     <form onSubmit={handleSearch} className="relative group">
                         <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-2xl blur-lg transition-opacity opacity-50 group-hover:opacity-100"></div>
@@ -187,7 +212,11 @@ const DeveloperLeaderboard: React.FC = () => {
 
             {/* Content Area */}
             <div className="w-full px-4">
-                {isUpcoming ? (
+                {loading ? (
+                    <div className="w-full h-[400px] flex items-center justify-center">
+                        <Loader2 className="animate-spin text-green-500" size={40} />
+                    </div>
+                ) : isUpcoming ? (
                     <div className="w-full glass-panel rounded-3xl border border-neutral-800 shadow-2xl p-12 flex flex-col items-center justify-center text-center space-y-6 min-h-[400px]">
                         <div className="relative">
                             <div className="absolute inset-0 bg-green-500/20 blur-2xl rounded-full"></div>

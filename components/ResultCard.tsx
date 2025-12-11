@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ZamaUser, SearchStatus } from '../types';
 import { Loader2, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
@@ -22,9 +23,11 @@ const ResultCard: React.FC<ResultCardProps> = ({
     progress = 0
 }) => {
     
-    // Calculate a simulated progress bar for the Mindshare score (assuming max is somewhat relative, typical high is 5-10% but lets just visually represent it)
-    // Actually, mindshare is a percentage.
-    const mindshareValue = data ? parseFloat(data.mindshare.toFixed(2)) : 0;
+    // Calculate a simulated progress bar for the Mindshare score 
+    // Safety check: ensure data.mindshare exists and is a number before calling toFixed
+    const mindshareValue = data && typeof data.mindshare === 'number' 
+        ? data.mindshare.toFixed(2) 
+        : "0.00";
     
     return (
         <div className={`glass-panel rounded-xl p-6 flex flex-col justify-between h-full min-h-[180px] transition-all duration-500 hover:translate-y-[-2px] ${status === 'found' ? 'border-neutral-600' : 'border-neutral-800'}`}>

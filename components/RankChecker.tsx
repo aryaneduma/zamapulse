@@ -8,12 +8,6 @@ import ResultCard from './ResultCard';
 import SearchHistory from './SearchHistory';
 import { ExternalLink, Zap, Trophy, Medal, Crown, Star } from 'lucide-react';
 
-// Import Static Data for Historical Checks
-import { SEASON_1_RANKED, SEASON_1_CHOICE_AWARDS } from '../data/season1';
-import { SEASON_2_RANKED, SEASON_2_CHOICE_AWARDS } from '../data/season2';
-import { SEASON_3_RANKED, SEASON_3_CHOICE_AWARDS } from '../data/season3';
-import { SEASON_4_RANKED, SEASON_4_CHOICE_AWARDS } from '../data/season4';
-
 interface Achievement {
     season: string;
     type: 'Ranked' | 'Creator Choice';
@@ -70,67 +64,78 @@ const RankChecker: React.FC = () => {
         }));
     };
 
-    const checkStaticSeasons = (username: string) => {
+    const checkStaticSeasons = async (username: string) => {
         const cleanUser = username.toLowerCase().replace('@', '').trim();
         const found: Achievement[] = [];
         let foundUserData: Partial<ZamaUser> | null = null;
 
-        const seasons = [
-            { id: 's1', label: 'Season 1', ranked: SEASON_1_RANKED, choice: SEASON_1_CHOICE_AWARDS },
-            { id: 's2', label: 'Season 2', ranked: SEASON_2_RANKED, choice: SEASON_2_CHOICE_AWARDS },
-            { id: 's3', label: 'Season 3', ranked: SEASON_3_RANKED, choice: SEASON_3_CHOICE_AWARDS },
-            { id: 's4', label: 'Season 4', ranked: SEASON_4_RANKED, choice: SEASON_4_CHOICE_AWARDS },
-        ];
+        try {
+            // Dynamically import season data to keep initial bundle size small
+            const [s1, s2, s3, s4] = await Promise.all([
+                import('../data/season1'),
+                import('../data/season2'),
+                import('../data/season3'),
+                import('../data/season4')
+            ]);
 
-        seasons.forEach(s => {
-            // Check Ranked List
-            // Note: Data structure varies slightly, handling robustly
-            const rankedMatch = s.ranked.find((u: any) => {
-                // Extract handle from URL, handling possible query params or trailing slashes
-                const urlParts = u.url ? u.url.split('x.com/') : [];
-                const handle = urlParts.length > 1 ? urlParts[1].split(/[/?]/)[0] : '';
-                return handle.toLowerCase() === cleanUser;
-            });
+            const seasons = [
+                { id: 's1', label: 'Season 1', ranked: s1?.SEASON_1_RANKED || [], choice: s1?.SEASON_1_CHOICE_AWARDS || [] },
+                { id: 's2', label: 'Season 2', ranked: s2?.SEASON_2_RANKED || [], choice: s2?.SEASON_2_CHOICE_AWARDS || [] },
+                { id: 's3', label: 'Season 3', ranked: s3?.SEASON_3_RANKED || [], choice: s3?.SEASON_3_CHOICE_AWARDS || [] },
+                { id: 's4', label: 'Season 4', ranked: s4?.SEASON_4_RANKED || [], choice: s4?.SEASON_4_CHOICE_AWARDS || [] },
+            ];
 
-            if (rankedMatch) {
-                found.push({ 
-                    season: s.label, 
-                    type: 'Ranked', 
-                    rank: rankedMatch.rank, 
-                    prize: rankedMatch.prize 
+            seasons.forEach(s => {
+                if (!s.ranked || !s.choice) return;
+
+                // Check Ranked List
+                const rankedMatch = s.ranked.find((u: any) => {
+                    const urlParts = u.url ? u.url.split('x.com/') : [];
+                    const handle = urlParts.length > 1 ? urlParts[1].split(/[/?]/)[0] : '';
+                    return handle.toLowerCase() === cleanUser;
                 });
-                // Fallback user data if not found in live stats
-                if (!foundUserData) {
-                    foundUserData = { 
-                        username: cleanUser, 
-                        displayName: rankedMatch.name, 
-                        profilePicture: `https://unavatar.io/twitter/${cleanUser}` 
-                    };
+
+                if (rankedMatch) {
+                    found.push({ 
+                        season: s.label, 
+                        type: 'Ranked', 
+                        rank: rankedMatch.rank, 
+                        prize: rankedMatch.prize 
+                    });
+                    if (!foundUserData) {
+                        foundUserData = { 
+                            username: cleanUser, 
+                            displayName: rankedMatch.name, 
+                            profilePicture: `https://unavatar.io/twitter/${cleanUser}` 
+                        };
+                    }
                 }
-            }
 
-            // Check Choice Awards
-            const choiceMatch = s.choice.find((u: any) => {
-                const handle = u.handle || '';
-                return handle.toLowerCase() === cleanUser;
-            });
-
-            if (choiceMatch) {
-                found.push({ 
-                    season: s.label, 
-                    type: 'Creator Choice', 
-                    rank: 'Winner', 
-                    prize: choiceMatch.prize 
+                // Check Choice Awards
+                const choiceMatch = s.choice.find((u: any) => {
+                    const handle = u.handle || '';
+                    return handle.toLowerCase() === cleanUser;
                 });
-                if (!foundUserData) {
-                    foundUserData = { 
-                        username: cleanUser, 
-                        displayName: choiceMatch.name, 
-                        profilePicture: `https://unavatar.io/twitter/${cleanUser}` 
-                    };
+
+                if (choiceMatch) {
+                    found.push({ 
+                        season: s.label, 
+                        type: 'Creator Choice', 
+                        rank: 'Winner', 
+                        prize: choiceMatch.prize 
+                    });
+                    if (!foundUserData) {
+                        foundUserData = { 
+                            username: cleanUser, 
+                            displayName: choiceMatch.name, 
+                            profilePicture: `https://unavatar.io/twitter/${cleanUser}` 
+                        };
+                    }
                 }
-            }
-        });
+            });
+        } catch (e) {
+            console.warn("Failed to load historical seasons:", e);
+        }
 
         return { achievements: found, userData: foundUserData };
     };
@@ -170,15 +175,20 @@ const RankChecker: React.FC = () => {
             }
         };
 
-        // Run all searches in parallel
-        await Promise.all(TIMEFRAMES.map(tf => runSearch(tf.key as Timeframe)));
+        // Run live search and historical check in parallel
+        try {
+            const [_, historyCheck] = await Promise.all([
+                Promise.all(TIMEFRAMES.map(tf => runSearch(tf.key as Timeframe))),
+                checkStaticSeasons(username)
+            ]);
 
-        // After live search, check history
-        const historyCheck = checkStaticSeasons(username);
-        if (historyCheck.achievements.length > 0) {
-            setAchievements(historyCheck.achievements);
-            // If user wasn't found in live stats, populate header with historical data
-            setUserMeta(prev => prev || historyCheck.userData);
+            if (historyCheck.achievements.length > 0) {
+                setAchievements(historyCheck.achievements);
+                // If user wasn't found in live stats, populate header with historical data
+                setUserMeta(prev => prev || historyCheck.userData);
+            }
+        } catch (e) {
+            console.error("Error during search:", e);
         }
 
         setIsSearching(false);

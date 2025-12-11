@@ -1,3 +1,4 @@
+
 export type Timeframe = '24h' | '7d' | '30d' | 'all' | 'season1' | 'season2' | 'season3' | 'season4' | 'season5';
 
 export interface ZamaUser {
@@ -30,4 +31,15 @@ export interface HistoryItem {
     displayName: string;
     avatar: string;
     timestamp: number;
+}
+
+export interface DevProject {
+    username: string;
+    projectName: string;
+    repoUrl: string;
+    description: string;
+    prize: string;
+    demoUrl?: string;
+    videoUrl?: string;
+    category?: string;
 }
