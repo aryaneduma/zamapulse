@@ -62,13 +62,17 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, user, results 
                 scale: 2, // Retina quality
                 logging: false,
                 allowTaint: true,
-                // Fix for text shifting: html2canvas often renders text slightly lower. 
-                // We use onclone to shift specific text elements up in the capture.
-                onclone: (clonedDoc) => {
-                    const elements = clonedDoc.querySelectorAll('.fix-shift');
-                    elements.forEach((el) => {
-                        (el as HTMLElement).style.transform = 'translateY(-3px)';
-                    });
+                // Critical optimization: ignore viewport scroll position to prevent vertical offset
+                scrollY: -window.scrollY,
+                windowWidth: document.documentElement.offsetWidth,
+                windowHeight: document.documentElement.offsetHeight,
+                // Ensure better text rendering
+                onclone: (doc) => {
+                    const el = doc.getElementById('capture-target');
+                    if (el) {
+                        el.style.fontFeatureSettings = '"liga" 0';
+                        el.style.letterSpacing = 'normal';
+                    }
                 }
             });
 
@@ -169,12 +173,12 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, user, results 
                         </div>
 
                         {/* Actual Card DOM to Capture */}
-                        {/* Using Grid Layout instead of Flex to enforce strict row heights and prevent shifting */}
                         <div 
                             ref={cardRef}
-                            className="w-[340px] sm:w-[500px] aspect-[1.6/1] relative overflow-hidden bg-[#050505] grid grid-rows-[auto_1fr_auto]"
+                            id="capture-target"
+                            className="w-[340px] sm:w-[500px] aspect-[1.6/1] relative overflow-hidden bg-[#050505] flex flex-col"
                         >
-                            {/* Background Elements - Absolute but pinned */}
+                            {/* Background Elements */}
                             <div className="absolute top-0 right-0 w-[80%] h-[80%] bg-gradient-to-bl from-yellow-600/20 via-transparent to-transparent blur-3xl opacity-60 pointer-events-none z-0"></div>
                             <div className="absolute bottom-0 left-0 w-[60%] h-[60%] bg-gradient-to-tr from-blue-900/20 via-transparent to-transparent blur-3xl opacity-50 pointer-events-none z-0"></div>
                             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.07] pointer-events-none z-0"></div>
@@ -183,86 +187,89 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, user, results 
                             <div className="absolute inset-0 border-[6px] border-neutral-900 z-50 pointer-events-none"></div>
                             <div className="absolute inset-[6px] border border-white/10 z-50 pointer-events-none rounded-sm"></div>
 
-                            {/* Row 1: Header */}
-                            <div className="relative z-10 flex justify-between items-start p-8 pb-0">
-                                <div className="flex items-center gap-2">
-                                    <div className="bg-yellow-500/10 p-1.5 rounded-lg border border-yellow-500/20">
-                                        <Zap className="text-yellow-500 fill-yellow-500" size={18} />
-                                    </div>
-                                    <div>
-                                        <div className="text-white font-bold font-display leading-tight tracking-tight fix-shift">ZAMA PULSE</div>
-                                        <div className="text-[10px] text-neutral-500 font-mono tracking-widest uppercase fix-shift">Leaderboard</div>
-                                    </div>
-                                </div>
-                                <div className="bg-neutral-900/80 border border-neutral-800 px-3 py-1 rounded-full backdrop-blur-md">
-                                    <span className="text-xs font-bold text-neutral-300 uppercase tracking-wide fix-shift">
-                                        {isCombined ? 'Elite Creator' : timeframeLabel}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Row 2: Middle Content (Centered) */}
-                            <div className="relative z-10 flex flex-col justify-center items-center w-full px-8">
-                                {isCombined ? (
-                                    <div className="flex flex-wrap justify-center items-center gap-3 w-full">
-                                        {activeResults.slice(0, 3).map(([tf, res]) => {
-                                            const label = TIMEFRAMES.find(t => t.key === tf)?.label.replace(' Hours', 'H').replace(' Days', 'D') || tf;
-                                            const r = res as SearchResult;
-                                            return (
-                                                <div key={tf} className="flex-1 min-w-[100px] bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col items-center justify-center backdrop-blur-sm max-w-[140px]">
-                                                    <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider mb-2 fix-shift">{label}</span>
-                                                    <span className="text-3xl font-black text-white font-display leading-none mb-2 fix-shift">#{r.data?.rank}</span>
-                                                    <div className="flex items-center gap-1 text-[10px] text-green-400 font-mono bg-green-900/20 px-1.5 py-0.5 rounded fix-shift">
-                                                        <TrendingUp size={10} />
-                                                        {r.data?.mindshare ? r.data.mindshare.toFixed(1) : 0}%
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
-                                    /* Single Rank Layout */
-                                    <div className="flex flex-col justify-center items-center">
-                                        <div className="text-[10px] text-yellow-500 font-bold uppercase tracking-[0.2em] mb-4 fix-shift">Current Rank</div>
-                                        {/* Reduced leading to preventing bounding box from pushing footer */}
-                                        <div className="text-7xl sm:text-8xl font-black text-white font-display tracking-tighter leading-[0.85] flex items-start gap-1 mb-6 fix-shift">
-                                            <span className="text-4xl sm:text-5xl text-neutral-600 mt-2">#</span>
-                                            {singleData?.rank}
+                            {/* Main Content Container - Using Flexbox with Padding Spacing */}
+                            <div className="relative z-10 flex flex-col h-full p-8">
+                                
+                                {/* Row 1: Header */}
+                                <div className="flex justify-between items-start mb-auto">
+                                    <div className="flex items-center gap-2">
+                                        <div className="bg-yellow-500/10 p-1.5 rounded-lg border border-yellow-500/20">
+                                            <Zap className="text-yellow-500 fill-yellow-500" size={18} />
                                         </div>
-                                        {singleData?.mindshare !== undefined && singleData.mindshare > 0 && (
-                                            <div className="bg-neutral-900/60 px-4 py-1.5 rounded-lg border border-white/5 flex items-center gap-2">
-                                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                                                <span className="text-xs text-neutral-300 font-mono fix-shift">Mindshare: <span className="text-white font-bold">{singleData.mindshare.toFixed(2)}%</span></span>
-                                            </div>
-                                        )}
+                                        <div>
+                                            <div className="text-white font-bold font-display leading-tight tracking-tight">ZAMA PULSE</div>
+                                            <div className="text-[10px] text-neutral-500 font-mono tracking-widest uppercase">Leaderboard</div>
+                                        </div>
                                     </div>
-                                )}
-                            </div>
+                                    <div className="bg-neutral-900/80 border border-neutral-800 px-3 py-1 rounded-full backdrop-blur-md">
+                                        <span className="text-xs font-bold text-neutral-300 uppercase tracking-wide">
+                                            {isCombined ? 'Elite Creator' : timeframeLabel}
+                                        </span>
+                                    </div>
+                                </div>
 
-                            {/* Row 3: Footer */}
-                            <div className="relative z-10 flex justify-between items-end p-8 pt-0">
-                                <div className="flex items-center gap-3">
-                                    {imgError ? (
-                                        <div className="w-10 h-10 rounded-full border-2 border-neutral-800 bg-neutral-800 flex items-center justify-center text-neutral-500">
-                                            <User size={20} />
+                                {/* Row 2: Middle Content (Centered) */}
+                                <div className="flex flex-col justify-center items-center w-full my-4">
+                                    {isCombined ? (
+                                        <div className="flex flex-wrap justify-center items-center gap-3 w-full">
+                                            {activeResults.slice(0, 3).map(([tf, res]) => {
+                                                const label = TIMEFRAMES.find(t => t.key === tf)?.label.replace(' Hours', 'H').replace(' Days', 'D') || tf;
+                                                const r = res as SearchResult;
+                                                return (
+                                                    <div key={tf} className="flex-1 min-w-[100px] bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col items-center justify-center backdrop-blur-sm max-w-[140px]">
+                                                        <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider mb-2">{label}</span>
+                                                        <span className="text-3xl font-black text-white font-display leading-none mb-2">#{r.data?.rank}</span>
+                                                        <div className="flex items-center gap-1 text-[10px] text-green-400 font-mono bg-green-900/20 px-1.5 py-0.5 rounded">
+                                                            <TrendingUp size={10} />
+                                                            {r.data?.mindshare ? r.data.mindshare.toFixed(1) : 0}%
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     ) : (
-                                        <img 
-                                            src={user.profilePicture} 
-                                            className="w-10 h-10 rounded-full border-2 border-neutral-800 bg-neutral-800 object-cover"
-                                            alt=""
-                                            crossOrigin="anonymous" 
-                                            onError={() => setImgError(true)}
-                                        />
+                                        /* Single Rank Layout */
+                                        <div className="flex flex-col justify-center items-center">
+                                            <div className="text-[10px] text-yellow-500 font-bold uppercase tracking-[0.2em] mb-4">Current Rank</div>
+                                            <div className="text-7xl sm:text-8xl font-black text-white font-display tracking-tighter leading-[0.85] flex items-start gap-1 mb-6">
+                                                <span className="text-4xl sm:text-5xl text-neutral-600 mt-2">#</span>
+                                                {singleData?.rank}
+                                            </div>
+                                            {singleData?.mindshare !== undefined && singleData.mindshare > 0 && (
+                                                <div className="bg-neutral-900/60 px-4 py-1.5 rounded-lg border border-white/5 flex items-center gap-2">
+                                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                                                    <span className="text-xs text-neutral-300 font-mono">Mindshare: <span className="text-white font-bold">{singleData.mindshare.toFixed(2)}%</span></span>
+                                                </div>
+                                            )}
+                                        </div>
                                     )}
-                                    <div className="flex flex-col">
-                                        <span className="text-white font-bold text-sm leading-tight max-w-[150px] truncate fix-shift">{user.displayName}</span>
-                                        <span className="text-neutral-500 text-xs fix-shift">@{user.username}</span>
-                                    </div>
                                 </div>
-                                <div className="flex items-center gap-1.5 opacity-60">
-                                    <span className="text-[10px] text-white/80 font-mono fix-shift">zamapulse.in</span>
-                                    <div className="w-1 h-1 bg-yellow-500 rounded-full"></div>
+
+                                {/* Row 3: Footer */}
+                                <div className="flex justify-between items-end mt-auto">
+                                    <div className="flex items-center gap-3">
+                                        {imgError ? (
+                                            <div className="w-10 h-10 rounded-full border-2 border-neutral-800 bg-neutral-800 flex items-center justify-center text-neutral-500">
+                                                <User size={20} />
+                                            </div>
+                                        ) : (
+                                            <img 
+                                                src={user.profilePicture} 
+                                                className="w-10 h-10 rounded-full border-2 border-neutral-800 bg-neutral-800 object-cover"
+                                                alt=""
+                                                crossOrigin="anonymous" 
+                                                onError={() => setImgError(true)}
+                                            />
+                                        )}
+                                        <div className="flex flex-col">
+                                            <span className="text-white font-bold text-sm leading-tight max-w-[150px] truncate">{user.displayName}</span>
+                                            <span className="text-neutral-500 text-xs">@{user.username}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 opacity-60">
+                                        <span className="text-[10px] text-white/80 font-mono">zamapulse.in</span>
+                                        <div className="w-1 h-1 bg-yellow-500 rounded-full"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

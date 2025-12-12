@@ -2,6 +2,22 @@
 import { API_BASE_URL, MAX_SEARCH_PAGES } from '../constants';
 import { ApiResponse, ZamaUser } from '../types';
 
+// Simple in-memory cache
+const cache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 60 * 1000; // 1 minute
+
+const getCached = (key: string) => {
+    const item = cache.get(key);
+    if (item && Date.now() - item.timestamp < CACHE_TTL) {
+        return item.data;
+    }
+    return null;
+};
+
+const setCache = (key: string, data: any) => {
+    cache.set(key, { data, timestamp: Date.now() });
+};
+
 /**
  * Searches for a user within a specific timeframe by paginating through the leaderboard.
  * Uses concurrent batch fetching to improve performance.
@@ -31,20 +47,30 @@ export const searchUserInTimeframe = async (
             const page = i + j + 1;
             if (page > MAX_SEARCH_PAGES) break;
             
-            // We return an object with page number to sort later
-            batchPromises.push(
-                fetch(`${API_BASE_URL}?timeframe=${timeframe}&sortBy=mindshare&page=${page}`)
-                    .then(async (res) => {
-                        if (!res.ok) return { page, json: null, error: true };
-                        try {
-                            const json = await res.json();
-                            return { page, json, error: false };
-                        } catch (e) {
-                            return { page, json: null, error: true };
-                        }
-                    })
-                    .catch(() => ({ page, json: null, error: true }))
-            );
+            const cacheKey = `${timeframe}-${page}`;
+            const cachedData = getCached(cacheKey);
+
+            if (cachedData) {
+                batchPromises.push(Promise.resolve({ page, json: cachedData, error: false }));
+            } else {
+                batchPromises.push(
+                    fetch(`${API_BASE_URL}?timeframe=${timeframe}&sortBy=mindshare&page=${page}`)
+                        .then(async (res) => {
+                            if (!res.ok) return { page, json: null, error: true };
+                            try {
+                                const json = await res.json();
+                                // Cache successful responses
+                                if (json && json.success) {
+                                    setCache(cacheKey, json);
+                                }
+                                return { page, json, error: false };
+                            } catch (e) {
+                                return { page, json: null, error: true };
+                            }
+                        })
+                        .catch(() => ({ page, json: null, error: true }))
+                );
+            }
         }
 
         // Execute batch
@@ -105,6 +131,11 @@ export const searchUserInTimeframe = async (
  * @param page The page number (1-indexed)
  */
 export const getLeaderboard = async (timeframe: string, page: number): Promise<ZamaUser[]> => {
+    const cacheKey = `lb-${timeframe}-${page}`;
+    const cachedData = getCached(cacheKey);
+    
+    if (cachedData) return cachedData.data;
+
     try {
         const response = await fetch(`${API_BASE_URL}?timeframe=${timeframe}&sortBy=mindshare&page=${page}`);
         if (!response.ok) return [];
@@ -117,7 +148,11 @@ export const getLeaderboard = async (timeframe: string, page: number): Promise<Z
             return [];
         }
 
-        return json && json.success && Array.isArray(json.data) ? json.data : [];
+        if (json && json.success && Array.isArray(json.data)) {
+            setCache(cacheKey, json);
+            return json.data;
+        }
+        return [];
     } catch (error) {
         console.error("Failed to fetch leaderboard page", error);
         return [];

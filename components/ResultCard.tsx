@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { ZamaUser, SearchStatus } from '../types';
 import { Loader2, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
 
@@ -109,4 +109,4 @@ const ResultCard: React.FC<ResultCardProps> = ({
     );
 };
 
-export default ResultCard;
+export default memo(ResultCard);
