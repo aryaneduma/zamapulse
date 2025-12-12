@@ -4,6 +4,7 @@ import { ApiResponse, ZamaUser } from '../types';
 
 /**
  * Searches for a user within a specific timeframe by paginating through the leaderboard.
+ * Uses concurrent batch fetching to improve performance.
  * 
  * @param username The username to search for (case insensitive)
  * @param timeframe The timeframe to search in ('24h', '7d', '30d')
@@ -16,45 +17,82 @@ export const searchUserInTimeframe = async (
     onProgress: (percent: number) => void
 ): Promise<ZamaUser | null> => {
     
+    if (!username) return null;
+
     const cleanUser = username.toLowerCase().replace('@', '').trim();
+    // Reduced batch size to prevent 429 Rate Limit errors when multiple timeframes are searched concurrently
+    const BATCH_SIZE = 3; 
     
-    for (let page = 1; page <= MAX_SEARCH_PAGES; page++) {
-        try {
-            // Update progress based on page number relative to max pages
-            const percent = Math.round((page / MAX_SEARCH_PAGES) * 100);
-            onProgress(percent);
-
-            const response = await fetch(`${API_BASE_URL}?timeframe=${timeframe}&sortBy=mindshare&page=${page}`);
+    for (let i = 0; i < MAX_SEARCH_PAGES; i += BATCH_SIZE) {
+        const batchPromises = [];
+        
+        // Prepare batch
+        for (let j = 0; j < BATCH_SIZE; j++) {
+            const page = i + j + 1;
+            if (page > MAX_SEARCH_PAGES) break;
             
-            if (!response.ok) {
-                console.warn(`API Error for ${timeframe} on page ${page}: ${response.statusText}`);
-                continue; 
-            }
+            // We return an object with page number to sort later
+            batchPromises.push(
+                fetch(`${API_BASE_URL}?timeframe=${timeframe}&sortBy=mindshare&page=${page}`)
+                    .then(async (res) => {
+                        if (!res.ok) return { page, json: null, error: true };
+                        try {
+                            const json = await res.json();
+                            return { page, json, error: false };
+                        } catch (e) {
+                            return { page, json: null, error: true };
+                        }
+                    })
+                    .catch(() => ({ page, json: null, error: true }))
+            );
+        }
 
-            let json: ApiResponse;
-            try {
-                json = await response.json();
-            } catch (e) {
-                console.warn(`Invalid JSON response for ${timeframe} on page ${page}`);
-                continue;
-            }
+        // Execute batch
+        const results = await Promise.all(batchPromises);
 
+        // Update progress based on the last page of this batch
+        const currentMaxPage = Math.min(i + BATCH_SIZE, MAX_SEARCH_PAGES);
+        const percent = Math.round((currentMaxPage / MAX_SEARCH_PAGES) * 100);
+        onProgress(percent);
+
+        // Sort results to ensure we check page 1 before page 2, etc.
+        results.sort((a, b) => a.page - b.page);
+
+        let endOfListReached = false;
+
+        for (const result of results) {
+            const { json } = result;
+            
             if (json && json.success && Array.isArray(json.data)) {
-                const user = json.data.find((u: ZamaUser) => 
-                    u.username.toLowerCase() === cleanUser || 
-                    u.displayName.toLowerCase().includes(cleanUser)
-                );
+                // Check if we hit an empty page, which usually means end of leaderboard
+                if (json.data.length === 0) {
+                    endOfListReached = true;
+                }
+
+                // Robust check to avoid crashes if API returns partial data
+                const user = json.data.find((u: ZamaUser) => {
+                    if (!u) return false;
+                    const uName = u.username ? u.username.toLowerCase() : '';
+                    const dName = u.displayName ? u.displayName.toLowerCase() : '';
+                    return uName === cleanUser || dName.includes(cleanUser);
+                });
 
                 if (user) {
                     return user;
                 }
-            } else {
-                break;
+            } else if (result.error) {
+                // Silent continue on error, try next pages
+                console.warn(`Failed to fetch page ${result.page} for ${timeframe}`);
             }
-
-        } catch (error) {
-            console.error(`Fetch error in ${timeframe}:`, error);
         }
+
+        // Optimization: If we found an empty page, no need to query further batches
+        if (endOfListReached) {
+            break;
+        }
+
+        // Small delay between batches to be nice to the API and avoid rate limits
+        await new Promise(resolve => setTimeout(resolve, 150));
     }
 
     return null;

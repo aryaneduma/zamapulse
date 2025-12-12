@@ -25,9 +25,17 @@ const ResultCard: React.FC<ResultCardProps> = ({
     
     // Calculate a simulated progress bar for the Mindshare score 
     // Safety check: ensure data.mindshare exists and is a number before calling toFixed
-    const mindshareValue = data && typeof data.mindshare === 'number' 
-        ? data.mindshare.toFixed(2) 
-        : "0.00";
+    let mindshareValue = "0.00";
+    if (data) {
+        if (typeof data.mindshare === 'number') {
+            mindshareValue = data.mindshare.toFixed(2);
+        } else if (typeof data.mindshare === 'string') {
+            const parsed = parseFloat(data.mindshare);
+            if (!isNaN(parsed)) {
+                mindshareValue = parsed.toFixed(2);
+            }
+        }
+    }
     
     return (
         <div className={`glass-panel rounded-xl p-6 flex flex-col justify-between h-full min-h-[180px] transition-all duration-500 hover:translate-y-[-2px] ${status === 'found' ? 'border-neutral-600' : 'border-neutral-800'}`}>

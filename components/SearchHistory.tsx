@@ -1,7 +1,7 @@
+
 import React from 'react';
 import { HistoryItem } from '../types';
 import { Clock, ArrowUpRight } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns'; // We don't have date-fns installed, I'll use simple formatter
 
 interface SearchHistoryProps {
     history: HistoryItem[];
@@ -41,7 +41,9 @@ const SearchHistory: React.FC<SearchHistoryProps> = ({ history, onSelect }) => {
                                 alt={item.username}
                                 className="w-10 h-10 rounded-full border border-neutral-700 group-hover:border-yellow-500/50 transition-colors"
                                 onError={(e) => {
-                                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${item.username}&background=random`;
+                                    const target = e.target as HTMLImageElement;
+                                    if (target.src.includes('ui-avatars.com')) return;
+                                    target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.username)}&background=random&color=fff`;
                                 }}
                             />
                         </div>

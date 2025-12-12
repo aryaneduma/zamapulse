@@ -24,6 +24,14 @@ const Leaderboard: React.FC = () => {
     const [staticData, setStaticData] = useState<any>(null);
     const [loadingStatic, setLoadingStatic] = useState(false);
 
+    // Cache to store state for each season to enable instant switching
+    const seasonCache = useRef<Record<string, {
+        users?: ZamaUser[],
+        page?: number,
+        hasMore?: boolean,
+        staticData?: any
+    }>>({});
+
     // Ref to track current season for race condition prevention
     const currentSeasonRef = useRef(selectedSeason);
 
@@ -33,11 +41,30 @@ const Leaderboard: React.FC = () => {
     // Initial Load & Season Change
     useEffect(() => {
         currentSeasonRef.current = selectedSeason;
+        setVerifyResult(null);
+        setVerifyQuery('');
+        
+        // Check Cache first
+        const cached = seasonCache.current[selectedSeason];
+        
+        if (cached) {
+            // Restore from cache - Instant Switch
+            if (isStaticSeason) {
+                setStaticData(cached.staticData);
+                setLoadingStatic(false);
+            } else {
+                setUsers(cached.users || []);
+                setPage(cached.page || 1);
+                setHasMore(cached.hasMore ?? true);
+                setLoading(false);
+            }
+            return; // Exit early as we used cache
+        }
+
+        // No cache, reset and fetch
         setUsers([]);
         setPage(1);
         setHasMore(true);
-        setVerifyResult(null);
-        setVerifyQuery('');
         setStaticData(null);
         
         if (isStaticSeason) {
@@ -46,6 +73,17 @@ const Leaderboard: React.FC = () => {
             loadMore(1, selectedSeason);
         }
     }, [selectedSeason]);
+
+    // Update cache whenever state changes for dynamic seasons
+    useEffect(() => {
+        if (!isStaticSeason && users.length > 0) {
+            seasonCache.current[selectedSeason] = {
+                users,
+                page,
+                hasMore
+            };
+        }
+    }, [users, page, hasMore, selectedSeason, isStaticSeason]);
 
     const loadStaticSeasonData = async (seasonId: string) => {
         setLoadingStatic(true);
@@ -59,6 +97,8 @@ const Leaderboard: React.FC = () => {
             // Check if user is still on the same tab
             if (currentSeasonRef.current === seasonId) {
                 setStaticData(data);
+                // Cache it
+                seasonCache.current[seasonId] = { staticData: data };
             }
         } catch (e) {
             console.error("Failed to load static data", e);
@@ -190,13 +230,19 @@ const Leaderboard: React.FC = () => {
         return <span className="font-mono text-neutral-400 font-bold">#{rank}</span>;
     };
 
+    const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, name: string) => {
+        const target = e.currentTarget;
+        if (target.src.includes('ui-avatars.com')) return; // Prevent infinite loop
+        target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=random&color=fff&size=128`;
+    };
+
     // --- STATIC SEASON RENDER (S1 & S2 & S3 & S4) ---
     const renderStaticSeason = (stats: any, choiceAwards: any[], rankedList: any[]) => {
         // Strict null check for stats object
         if (!stats) return <div className="p-10 text-center text-neutral-500">Loading data...</div>;
 
         return (
-            <div className="w-full space-y-12 animate-in fade-in duration-500">
+            <div className="w-full space-y-12">
                 
                 {/* Stats Overview */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -239,7 +285,12 @@ const Leaderboard: React.FC = () => {
                                             <ExternalLink size={14} className="text-neutral-400 group-hover:text-white" />
                                         </div>
                                         <div className="flex items-center gap-3 mb-3">
-                                            <img src={`https://unavatar.io/${winner.platform && winner.platform.toLowerCase() === 'x' ? 'twitter' : ''}/${winner.handle}`} className="w-12 h-12 rounded-full border border-neutral-700 bg-neutral-800" alt={winner.name} />
+                                            <img 
+                                                src={`https://unavatar.io/${winner.platform && winner.platform.toLowerCase() === 'x' ? 'twitter' : ''}/${winner.handle}`} 
+                                                className="w-12 h-12 rounded-full border border-neutral-700 bg-neutral-800" 
+                                                alt={winner.name} 
+                                                onError={(e) => handleImageError(e, winner.name)}
+                                            />
                                             <div>
                                                 <div className="font-bold text-white">{winner.name}</div>
                                                 <div className="text-xs text-neutral-400">{winner.platform}</div>
@@ -289,6 +340,7 @@ const Leaderboard: React.FC = () => {
                                                                 alt="" 
                                                                 className="w-10 h-10 rounded-full bg-neutral-800 border border-neutral-800"
                                                                 loading="lazy"
+                                                                onError={(e) => handleImageError(e, user.name)}
                                                             />
                                                             <div>
                                                                 <div className="font-bold text-neutral-200">{user.name}</div>
@@ -399,6 +451,7 @@ const Leaderboard: React.FC = () => {
                                             src={verifyResult.data.profilePicture || `https://unavatar.io/twitter/${verifyResult.data.username}`} 
                                             className="w-16 h-16 rounded-full border-2 border-yellow-500 shadow-xl relative z-10" 
                                             alt="" 
+                                            onError={(e) => handleImageError(e, verifyResult.data.displayName || verifyResult.data.name || verifyResult.data.username)}
                                         />
                                         <div className="absolute -bottom-1 -right-1 bg-green-500 text-black rounded-full p-0.5 border-2 border-black z-20">
                                             <CheckCircle2 size={12} />
@@ -444,110 +497,116 @@ const Leaderboard: React.FC = () => {
                 )}
             </div>
 
-            {/* Content Area */}
-            {loadingStatic ? (
-                <div className="py-20">
-                    <Loader2 className="animate-spin text-yellow-500" size={40} />
-                </div>
-            ) : (
-                <>
-                    {/* Safe rendering with optional chaining to prevent crashes if data is missing */}
-                    {selectedSeason === 'season1' && staticData && (
-                        renderStaticSeason(staticData?.SEASON_1_STATS, staticData?.SEASON_1_CHOICE_AWARDS, staticData?.SEASON_1_RANKED)
-                    )}
-                    {selectedSeason === 'season2' && staticData && (
-                        renderStaticSeason(staticData?.SEASON_2_STATS, staticData?.SEASON_2_CHOICE_AWARDS, staticData?.SEASON_2_RANKED)
-                    )}
-                    {selectedSeason === 'season3' && staticData && (
-                        renderStaticSeason(staticData?.SEASON_3_STATS, staticData?.SEASON_3_CHOICE_AWARDS, staticData?.SEASON_3_RANKED)
-                    )}
-                    {selectedSeason === 'season4' && staticData && (
-                        renderStaticSeason(staticData?.SEASON_4_STATS, staticData?.SEASON_4_CHOICE_AWARDS, staticData?.SEASON_4_RANKED)
-                    )}
-                    
-                    {!isStaticSeason && (
-                        <div className="w-full glass-panel rounded-3xl overflow-hidden border border-neutral-800 shadow-2xl">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr className="border-b border-neutral-800 bg-black/40 text-xs uppercase text-neutral-400 tracking-wider font-semibold">
-                                            <th className="p-5 w-24 text-center">Rank</th>
-                                            <th className="p-5">Creator</th>
-                                            <th className="p-5 text-right">Mindshare</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-neutral-800/50">
-                                        {users.map((user) => (
-                                            <tr key={user._id} className="hover:bg-white/[0.02] transition-colors group">
-                                                <td className="p-4 text-center">
-                                                    <div className="flex justify-center items-center h-full scale-90 group-hover:scale-100 transition-transform">
-                                                        {getRankIcon(user.rank)}
-                                                    </div>
-                                                </td>
-                                                <td className="p-4">
-                                                    <div className="flex items-center gap-4">
-                                                        <img 
-                                                            src={user.profilePicture || `https://unavatar.io/twitter/${user.username}`} 
-                                                            alt="" 
-                                                            className="w-10 h-10 rounded-full bg-neutral-800 object-cover border border-neutral-800 group-hover:border-yellow-500/30 transition-colors"
-                                                            loading="lazy"
-                                                        />
-                                                        <div className="min-w-0">
-                                                            <div className="font-bold text-neutral-200 group-hover:text-white truncate text-base">{user.displayName}</div>
-                                                            <a 
-                                                                href={`https://x.com/${user.username}`}
-                                                                target="_blank"
-                                                                rel="noreferrer" 
-                                                                className="text-xs text-neutral-400 flex items-center gap-1 hover:text-yellow-400 hover:underline mt-0.5"
-                                                            >
-                                                                @{user.username}
-                                                            </a>
+            {/* Content Area - Wrapped for Transitions and Min Height */}
+            <div 
+                key={selectedSeason} 
+                className="w-full min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out"
+            >
+                {loadingStatic ? (
+                    <div className="py-20 flex items-center justify-center h-full">
+                        <Loader2 className="animate-spin text-yellow-500" size={40} />
+                    </div>
+                ) : (
+                    <>
+                        {/* Safe rendering with optional chaining to prevent crashes if data is missing */}
+                        {selectedSeason === 'season1' && staticData && (
+                            renderStaticSeason(staticData?.SEASON_1_STATS, staticData?.SEASON_1_CHOICE_AWARDS, staticData?.SEASON_1_RANKED)
+                        )}
+                        {selectedSeason === 'season2' && staticData && (
+                            renderStaticSeason(staticData?.SEASON_2_STATS, staticData?.SEASON_2_CHOICE_AWARDS, staticData?.SEASON_2_RANKED)
+                        )}
+                        {selectedSeason === 'season3' && staticData && (
+                            renderStaticSeason(staticData?.SEASON_3_STATS, staticData?.SEASON_3_CHOICE_AWARDS, staticData?.SEASON_3_RANKED)
+                        )}
+                        {selectedSeason === 'season4' && staticData && (
+                            renderStaticSeason(staticData?.SEASON_4_STATS, staticData?.SEASON_4_CHOICE_AWARDS, staticData?.SEASON_4_RANKED)
+                        )}
+                        
+                        {!isStaticSeason && (
+                            <div className="w-full glass-panel rounded-3xl overflow-hidden border border-neutral-800 shadow-2xl">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="border-b border-neutral-800 bg-black/40 text-xs uppercase text-neutral-400 tracking-wider font-semibold">
+                                                <th className="p-5 w-24 text-center">Rank</th>
+                                                <th className="p-5">Creator</th>
+                                                <th className="p-5 text-right">Mindshare</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-neutral-800/50">
+                                            {users.map((user) => (
+                                                <tr key={user._id} className="hover:bg-white/[0.02] transition-colors group">
+                                                    <td className="p-4 text-center">
+                                                        <div className="flex justify-center items-center h-full scale-90 group-hover:scale-100 transition-transform">
+                                                            {getRankIcon(user.rank)}
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td className="p-4 text-right">
-                                                    <div className="inline-block bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-lg">
-                                                        <span className="font-mono text-blue-400 font-bold">{user.mindshare.toFixed(2)}%</span>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        
-                                        {users.length === 0 && !loading && (
-                                            <tr>
-                                                <td colSpan={3} className="p-20 text-center text-neutral-400">
-                                                    <div className="flex flex-col items-center gap-2">
-                                                        <Search className="opacity-20" size={40} />
-                                                        <span>No data available for this season yet.</span>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div className="flex items-center gap-4">
+                                                            <img 
+                                                                src={user.profilePicture || `https://unavatar.io/twitter/${user.username}`} 
+                                                                alt="" 
+                                                                className="w-10 h-10 rounded-full bg-neutral-800 object-cover border border-neutral-800 group-hover:border-yellow-500/30 transition-colors"
+                                                                loading="lazy"
+                                                                onError={(e) => handleImageError(e, user.displayName || user.username)}
+                                                            />
+                                                            <div className="min-w-0">
+                                                                <div className="font-bold text-neutral-200 group-hover:text-white truncate text-base">{user.displayName}</div>
+                                                                <a 
+                                                                    href={`https://x.com/${user.username}`}
+                                                                    target="_blank"
+                                                                    rel="noreferrer" 
+                                                                    className="text-xs text-neutral-400 flex items-center gap-1 hover:text-yellow-400 hover:underline mt-0.5"
+                                                                >
+                                                                    @{user.username}
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4 text-right">
+                                                        <div className="inline-block bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-lg">
+                                                            <span className="font-mono text-blue-400 font-bold">{user.mindshare.toFixed(2)}%</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            
+                                            {users.length === 0 && !loading && (
+                                                <tr>
+                                                    <td colSpan={3} className="p-20 text-center text-neutral-400">
+                                                        <div className="flex flex-col items-center gap-2">
+                                                            <Search className="opacity-20" size={40} />
+                                                            <span>No data available for this season yet.</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
 
-                            {/* Load More Trigger */}
-                            {hasMore && page <= 10 && users.length > 0 && (
-                                <div className="p-4 flex justify-center border-t border-neutral-800 bg-black/20 backdrop-blur">
-                                    <button 
-                                        onClick={() => loadMore()} 
-                                        disabled={loading}
-                                        className="text-sm font-semibold text-neutral-400 hover:text-white transition-colors flex items-center gap-2 px-6 py-3 rounded-xl hover:bg-neutral-800 active:scale-95 duration-200"
-                                    >
-                                        {loading ? <Loader2 className="animate-spin" size={16} /> : 'Load More Creators'}
-                                    </button>
-                                </div>
-                            )}
-                            {(!hasMore || page > 10) && users.length > 0 && (
-                                <div className="p-6 text-center text-xs text-neutral-500 border-t border-neutral-800 uppercase tracking-widest font-semibold">
-                                    — End of Top 1000 —
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </>
-            )}
+                                {/* Load More Trigger */}
+                                {hasMore && page <= 10 && users.length > 0 && (
+                                    <div className="p-4 flex justify-center border-t border-neutral-800 bg-black/20 backdrop-blur">
+                                        <button 
+                                            onClick={() => loadMore()} 
+                                            disabled={loading}
+                                            className="text-sm font-semibold text-neutral-400 hover:text-white transition-colors flex items-center gap-2 px-6 py-3 rounded-xl hover:bg-neutral-800 active:scale-95 duration-200"
+                                        >
+                                            {loading ? <Loader2 className="animate-spin" size={16} /> : 'Load More Creators'}
+                                        </button>
+                                    </div>
+                                )}
+                                {(!hasMore || page > 10) && users.length > 0 && (
+                                    <div className="p-6 text-center text-xs text-neutral-500 border-t border-neutral-800 uppercase tracking-widest font-semibold">
+                                        — End of Top 1000 —
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
         </div>
     );
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SearchResult, ZamaUser, HistoryItem, Timeframe } from '../types';
 import { TIMEFRAMES, LOCAL_STORAGE_KEY } from '../constants';
@@ -6,7 +5,8 @@ import { searchUserInTimeframe } from '../services/zamaService';
 import SearchBar from './SearchBar';
 import ResultCard from './ResultCard';
 import SearchHistory from './SearchHistory';
-import { ExternalLink, Zap, Trophy, Medal, Crown, Star } from 'lucide-react';
+import ShareModal from './ShareModal'; // Import new component
+import { ExternalLink, Zap, Trophy, Medal, Crown, Star, Share2 } from 'lucide-react';
 
 interface Achievement {
     season: string;
@@ -43,6 +43,9 @@ const RankChecker: React.FC = () => {
 
     // History State
     const [history, setHistory] = useState<HistoryItem[]>([]);
+
+    // Share Modal State
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
     // Load History on Mount
     useEffect(() => {
@@ -215,6 +218,9 @@ const RankChecker: React.FC = () => {
         }
     }, [isSearching, userMeta]);
 
+    // Check if there is at least one active found rank to share
+    const canShare = Object.values(results).some((r) => (r as SearchResult | undefined)?.status === 'found');
+
     return (
         <div className="w-full max-w-4xl flex flex-col items-center animate-in fade-in duration-500">
             {/* Header */}
@@ -239,14 +245,30 @@ const RankChecker: React.FC = () => {
             {/* User Profile Header (Visible when data found) */}
             {userMeta && (
                 <div className="w-full mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                    <div className="glass-panel rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-6 border-l-4 border-l-yellow-500">
+                    <div className="glass-panel rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-6 border-l-4 border-l-yellow-500 relative overflow-hidden">
+                        {/* Share Button (Desktop & Mobile positioned absolute or flex) */}
+                        {canShare && (
+                            <button 
+                                onClick={() => setIsShareModalOpen(true)}
+                                className="absolute top-4 right-4 sm:static sm:order-last sm:ml-auto flex items-center gap-2 bg-yellow-500 text-black px-4 py-2 rounded-xl text-sm font-bold shadow-lg hover:bg-yellow-400 transition-all hover:scale-105 active:scale-95"
+                            >
+                                <Share2 size={16} />
+                                <span className="hidden sm:inline">Share Rank</span>
+                            </button>
+                        )}
+
                         <img 
                             src={userMeta.profilePicture} 
                             alt={userMeta.displayName} 
-                            className="w-20 h-20 rounded-full border-4 border-neutral-800 shadow-2xl"
+                            className="w-20 h-20 rounded-full border-4 border-neutral-800 shadow-2xl z-10"
+                            onError={(e) => {
+                                const target = e.currentTarget;
+                                if (target.src.includes('ui-avatars.com')) return;
+                                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userMeta.displayName || userMeta.username || 'User')}&background=random&color=fff&size=128`;
+                            }}
                         />
-                        <div className="text-center sm:text-left flex-1">
-                            <h2 className="text-2xl font-bold text-white font-display">{userMeta.displayName}</h2>
+                        <div className="text-center sm:text-left flex-1 min-w-0 z-10">
+                            <h2 className="text-2xl font-bold text-white font-display truncate">{userMeta.displayName}</h2>
                             <a 
                                 href={`https://x.com/${userMeta.username}`}
                                 target="_blank"
@@ -256,18 +278,6 @@ const RankChecker: React.FC = () => {
                                 @{userMeta.username}
                                 <ExternalLink size={14} />
                             </a>
-                        </div>
-                        <div className="hidden sm:block text-right">
-                            <div className="text-xs text-neutral-400 uppercase tracking-widest font-bold mb-1">Status</div>
-                            {results['24h']?.status === 'found' || results['7d']?.status === 'found' || results['30d']?.status === 'found' ? (
-                                <div className="text-green-400 font-mono text-sm bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20 inline-block">
-                                    Active
-                                </div>
-                            ) : (
-                                <div className="text-neutral-400 font-mono text-sm bg-neutral-500/10 px-3 py-1 rounded-full border border-neutral-500/20 inline-block">
-                                    Inactive
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -337,6 +347,16 @@ const RankChecker: React.FC = () => {
             <div className="w-full max-w-xl">
                 <SearchHistory history={history} onSelect={handleSearch} />
             </div>
+
+            {/* Share Modal */}
+            {userMeta && (
+                <ShareModal 
+                    isOpen={isShareModalOpen} 
+                    onClose={() => setIsShareModalOpen(false)} 
+                    user={userMeta}
+                    results={results}
+                />
+            )}
         </div>
     );
 };

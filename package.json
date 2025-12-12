@@ -1,3 +1,4 @@
+
 {
   "name": "zama-pulse",
   "private": true,
@@ -12,7 +13,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "lucide-react": "^0.344.0",
-    "date-fns": "^3.3.1"
+    "date-fns": "^3.3.1",
+    "html2canvas": "^1.4.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.64",

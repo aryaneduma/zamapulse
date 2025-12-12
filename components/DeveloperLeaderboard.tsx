@@ -81,7 +81,9 @@ const DeveloperLeaderboard: React.FC = () => {
                         alt={project.username}
                         className="w-16 h-16 rounded-xl border border-neutral-700 shadow-lg bg-black"
                         onError={(e) => {
-                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${project.username}&background=random`;
+                            const target = e.target as HTMLImageElement;
+                            if (target.src.includes('ui-avatars.com')) return;
+                            target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(project.username)}&background=random&color=fff`;
                         }}
                     />
                 </div>

@@ -106,6 +106,11 @@ const App: React.FC = () => {
                                             src="https://unavatar.io/twitter/idkerrors" 
                                             alt="idkerrors" 
                                             className="w-12 h-12 rounded-lg object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                                            onError={(e) => {
+                                                const target = e.currentTarget;
+                                                if (target.src.includes('ui-avatars.com')) return;
+                                                target.src = `https://ui-avatars.com/api/?name=idkerrors&background=random&color=fff`;
+                                            }}
                                         />
                                         <div className="absolute -bottom-1 -right-1 bg-black rounded-full p-0.5">
                                             <div className="bg-green-500 w-2.5 h-2.5 rounded-full border-2 border-black"></div>
